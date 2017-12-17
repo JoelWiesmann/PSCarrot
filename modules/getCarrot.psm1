@@ -1,13 +1,12 @@
-﻿########################################################################################
-# PSCarrot, by Joel Wiesmann, 2017, joel.wiesmann@workflowcommander.ch
-#########################################################################################
- 
-<#
+﻿<#
   .SYNOPSIS
     Pulls message(s) from a MQRabbit queue.
 
   .DESCRIPTION
     Get-Carrot pulls message(s) from a MQRabbit queue. Allows to auto-acknowledge.
+
+  .NOTES
+    PSCarrot by Joel Wiesmann, https://github.com/JoelWiesmann/PSCarrot
 
   .EXAMPLE
     Get-Carrot -con $queCon -queue 'MyDemoQueue'
@@ -28,11 +27,11 @@ function Get-Carrot {
     [int]   $prefetch = $fetch
   )
 
-  if (! $con.IsOpen) {
-    throw('Carrot connection is not opened (anymore).')
+  if (! $con.IsOpen -or ! $con.channel.IsOpen) {
+    throw('Carrot RabbitMQ connection or channel is not opened (anymore).')
   }
 
-  $model = $con.CreateModel() 
+  $model = $con.channel
   $model.BasicQos(0, $prefetch, $true)
   
   $msgCounter = 0
@@ -59,6 +58,4 @@ function Get-Carrot {
       break
     }
   }
-
-  $model.Close()
 }

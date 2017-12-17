@@ -1,15 +1,16 @@
-﻿########################################################################################
-# PSCarrot, by Joel Wiesmann, 2017, joel.wiesmann@workflowcommander.ch
-#########################################################################################
+﻿<#
+  .SYNOPSIS
+    Send a message to an RabbitMQ Exchange.
 
-<#
-.Synopsis
-   Create new connection to RabbitMQ server.
-.DESCRIPTION
-   New-RabbitMQConnection creates new connection to RabbitMQ server.
-.EXAMPLE
-   New-RabbitMQConnection
-   Creates new connection to local RabbitMQ server using default credentials. 
+  .DESCRIPTION
+    Send-Carrot sends a message to an RabbitMQ exchange that will forward it accordingly.
+
+  .NOTES
+    PSCarrot by Joel Wiesmann, https://github.com/JoelWiesmann/PSCarrot
+
+  .EXAMPLE
+    Send-Carrot -con $connection -exchange 'DefaultExchange' -payload 'hello world'
+    Sends 'hello world' to the DefaultExchange.
 #>
 function Send-Carrot {
   Param (
@@ -17,28 +18,56 @@ function Send-Carrot {
     [RabbitMQ.Client.Framing.Impl.AutorecoveringConnection]$con,
     [Parameter(Mandatory)]
     [string]$exchange,
-    [Parameter(Mandatory)]
+    [Parameter(Mandatory,ValueFromPipeline)]
     [string]$payload,
-    [string]$contentType = 'text/plain',
+    [hashtable]$properties = @{ 'contentType' = 'text/plain' },
     [string]$routingKey  = ''
   )
   
-  if (! $con.IsOpen) {
-    throw('Carrot RabbitMQ connection is not opened (anymore).')
+  begin {
+    if (! $con.IsOpen -or ! $con.channel.IsOpen) {
+      throw('Carrot RabbitMQ connection or channel is not opened (anymore).')
+    }
+    
+    $model = $con.channel
+
+    # If there are any properties specified, set them dynamically.
+    $props = $model.CreateBasicProperties()
+    foreach($key in $properties.GetEnumerator()) {
+      # Support tables (especially for headers)
+      if ($key.value -is [hashtable]) {
+        $params = New-Object 'System.Collections.Generic.Dictionary[string,object]'
+        foreach ($htKey in $key.value.getEnumerator()) {
+          $params.Add($key.value.($htkey.name), $htKey.value)
+        }
+        $props.($key.name) = $params
+      }
+      else {
+        $props.($key.name) = $key.value
+      }
+    }
+    
+    $msgcount = 0
   }
 
-  $messageBodyBytes = [Text.Encoding]::UTF8.GetBytes($payload)
+  process {
+    $messageBodyBytes = [Text.Encoding]::UTF8.GetBytes($payload)
+
+    $model.BasicPublish($exchange,
+      $routingKey, 
+      $false,
+      $props,
+      $messageBodyBytes
+    )
+
+    if ($model.CloseReason) {
+      throw('Sending message failed: ' + $model.CloseReason.ReplyText)
+    }
+
+    $msgcount++
+  }
   
-  $model = $con.CreateModel()
-  $props = $model.CreateBasicProperties()
-  $props.ContentType = $contentType
-
-  $model.BasicPublish($exchange,
-                    $routingKey, 
-                    $false,
-                    $props,
-                    $messageBodyBytes
-  )
-
-  $model.Close()
+  end {
+    Write-Verbose ('Sent ' + $msgcount + ' messages to ' + $exchange + '.')
+  }
 }

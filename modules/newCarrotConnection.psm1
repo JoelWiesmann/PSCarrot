@@ -1,13 +1,12 @@
-﻿########################################################################################
-# PSCarrot, by Joel Wiesmann, 2017, joel.wiesmann@workflowcommander.ch
-#########################################################################################
-
-<#
+﻿<#
   .SYNOPSIS
     Create new connection to RabbitMQ.
 
   .DESCRIPTION
     New-CarrotConnection creates new connection to RabbitMQ to send and retrieve messages.
+
+  .NOTES
+    PSCarrot by Joel Wiesmann, https://github.com/JoelWiesmann/PSCarrot
 
   .EXAMPLE
     $queCon = New-CarrotConnection
@@ -31,7 +30,7 @@ function New-CarrotConnection {
   )
 
   $connectionFactory = New-Object RabbitMQ.Client.ConnectionFactory
-
+ 
   if ($PSCmdlet.ParameterSetName -eq 'NonURI') {
     if ($Credential) {
       $UserName = $Credential.UserName
@@ -59,5 +58,7 @@ function New-CarrotConnection {
     throw $_
   }
 
-  $connection
+  $connection | `
+    Add-Member channel ($connection.CreateModel()) -PassThru | `
+    Add-Member -Type ScriptMethod -Name recover -Value { $this.channel = $this.CreateModel() } -PassThru 
 }

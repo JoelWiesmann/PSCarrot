@@ -28,6 +28,12 @@ Send-Carrot -con $connection -exchange 'MyExchange' -payload 'Hello World'
 
 # Send the same including a routing key
 Send-Carrot -con $connection -exchange 'MyExchange' -routingKey 'noTrash' -payload 'Hello World'
+
+# Send message with expiration setting
+Send-Carrot -con $connection -exchange default -payload 'I am so expired already!' -properties @{ 'Expiration' = 1 }
+
+# .. with header
+Send-Carrot -con $connection -exchange default -payload 'Give headers.' -properties @{ 'Headers' = @{ 'head' = 'off' } }
 ```
 
 ## Receiving message (PULL)
@@ -40,5 +46,15 @@ Get-Carrot -con $connection -queue default_queue
 Get-Carrot -con $connection -queue default_queue -fetch 1 -autoAck $false
 ```
 
-## Receiving Message (PUSH)
-This experimental piece is in work.
+## Acknowledge message
+```powershell
+# to be done
+```
+
+# Examples
+
+## Send a (plaintext) file
+```powershell
+Get-Content loveletter.log | Send-Carrot -con $connection -exchange 'default'
+
+```

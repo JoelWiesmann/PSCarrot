@@ -23,7 +23,7 @@
     'modules\newCarrotConnection.psm1',
     'modules\sendCarrot.psm1',
     'modules\getCarrot.psm1',
-    'modules\subscribeCarrot.psm1'
+    'modules\confirmCarrot.psm1'
   )
 
   FunctionsToExport = @('*')
