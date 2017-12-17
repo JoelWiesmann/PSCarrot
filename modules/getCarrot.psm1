@@ -1,14 +1,14 @@
 ﻿<#
-  .SYNOPSIS
+    .SYNOPSIS
     Pulls message(s) from a MQRabbit queue.
 
-  .DESCRIPTION
+    .DESCRIPTION
     Get-Carrot pulls message(s) from a MQRabbit queue. Allows to auto-acknowledge.
 
-  .NOTES
+    .NOTES
     PSCarrot by Joel Wiesmann, https://github.com/JoelWiesmann/PSCarrot
 
-  .EXAMPLE
+    .EXAMPLE
     Get-Carrot -con $queCon -queue 'MyDemoQueue'
     Pulls all messages from the queue and auto-acknowledges. 
 
@@ -27,9 +27,7 @@ function Get-Carrot {
     [int]   $prefetch = $fetch
   )
 
-  if (! $con.IsOpen -or ! $con.channel.IsOpen) {
-    throw('Carrot RabbitMQ connection or channel is not opened (anymore).')
-  }
+  try { Test-CarrotConnection -con $con } catch { throw $_ }
 
   $model = $con.channel
   $model.BasicQos(0, $prefetch, $true)
@@ -58,4 +56,6 @@ function Get-Carrot {
       break
     }
   }
+  
+  try { Test-CarrotConnection -con $con -safewait } catch { throw $_ }
 }

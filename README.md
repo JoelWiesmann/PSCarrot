@@ -1,10 +1,15 @@
 # PSCarrot
-Lightweight RabbitMQ Client for Powershell based on the RabbitMQ DotNet client.
+Lightweight RabbitMQ Client for Powershell based on the RabbitMQ DotNet client. Not intended for administrative tasks (for the moment at least) like exchange/queue creation and binding but sending / receiving / acknowledging messages.  
+
+Use at your own risk :v:
 
 # Installation
-After cloning repository / downloading and unpacking ZIP file, unblock all files and load the module. When you see the available PSCarrot cmdlets you're ready.
+After cloning repository / downloading and unpacking ZIP file, get the RabbitMQ.Client.dll. Unblock all files and load the module. When you see the available PSCarrot cmdlets you're ready.
 
 ```powershell
+# This module currently does only work with the 5.1.0-pre1 release. You can use the nuget package manager or download it manually,
+# safe it as .zip and place the RabbitMQ.Client.dll in the lib subfolder of the module.
+explorer.exe https://www.nuget.org/packages/RabbitMQ.Client/5.1.0-pre1
 Get-ChildItem -Recurse PSCarrot | Unblock-File
 Import-Module PSCarrot
 Get-Command -Module PSCarrot
@@ -48,13 +53,9 @@ Get-Carrot -con $connection -queue default_queue -fetch 1 -autoAck $false
 
 ## Acknowledge message
 ```powershell
-# to be done
+# Read with autoAck set to false, then Confirm-Carrot to acknowledge messages
+$messages = Get-Carrot -con $connection -queue default_queue -autoAck $false
+# Do something here.
+$messages | Confirm-Carrot -con $connection
 ```
 
-# Examples
-
-## Send a (plaintext) file
-```powershell
-Get-Content loveletter.log | Send-Carrot -con $connection -exchange 'default'
-
-```

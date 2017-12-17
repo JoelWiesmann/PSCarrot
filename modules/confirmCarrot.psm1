@@ -9,7 +9,8 @@
     PSCarrot by Joel Wiesmann, https://github.com/JoelWiesmann/PSCarrot
 
     .EXAMPLE
-
+    $messages = Get-Carrot -con $carrotConnection -queue demo_queue -autoAck $false
+    $messages | Confirm-Carrot -con $carrotConnection
 #>
 
 function Confirm-Carrot {
@@ -24,9 +25,7 @@ function Confirm-Carrot {
   )
 
   begin {
-    if (! $con.IsOpen -or ! $con.channel.IsOpen) {
-      throw('Carrot RabbitMQ connection or channel is not opened (anymore).')
-    }
+    try { Test-CarrotConnection -con $con } catch { throw $_ }
 
     $model = $con.channel
     $msgCounter = 0
@@ -43,10 +42,8 @@ function Confirm-Carrot {
     catch {
       throw('Acknowledging message with tag ' + $deliveryTag + ' failed: ' + $_)
     }
-
-    if ($model.CloseReason) {
-      throw('Acknowledging message with tag ' + $deliveryTag + ' failed: ' + $model.CloseReason.ReplyText)
-    }
+    
+    try { Test-CarrotConnection -con $con -safewait } catch { throw $_ }
     
     $msgCounter++
   }

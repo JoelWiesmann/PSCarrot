@@ -25,10 +25,8 @@ function Send-Carrot {
   )
   
   begin {
-    if (! $con.IsOpen -or ! $con.channel.IsOpen) {
-      throw('Carrot RabbitMQ connection or channel is not opened (anymore).')
-    }
-    
+    try { Test-CarrotConnection -con $con } catch { throw $_ }
+
     $model = $con.channel
 
     # If there are any properties specified, set them dynamically.
@@ -68,6 +66,7 @@ function Send-Carrot {
   }
   
   end {
+    try { Test-CarrotConnection -con $con -safewait } catch { throw $_ }
     Write-Verbose ('Sent ' + $msgcount + ' messages to ' + $exchange + '.')
   }
 }

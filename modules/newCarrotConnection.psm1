@@ -26,7 +26,8 @@ function New-CarrotConnection {
     [Parameter(ParameterSetName='NonURI')]
     [string]       $VirtualHost = '/',
     [Parameter(ParameterSetName='URI')]
-    [string]       $URI         = 'amqp://guest:guest@localhost:5672/'
+    [string]       $URI         = 'amqp://guest:guest@localhost:5672/',
+    [int]          $safeWait    = 100
   )
 
   $connectionFactory = New-Object RabbitMQ.Client.ConnectionFactory
@@ -60,5 +61,6 @@ function New-CarrotConnection {
 
   $connection | `
     Add-Member channel ($connection.CreateModel()) -PassThru | `
+    Add-Member safeWait $safeWait -PassThru | `
     Add-Member -Type ScriptMethod -Name recover -Value { $this.channel = $this.CreateModel() } -PassThru 
 }
